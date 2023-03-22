@@ -1,0 +1,4 @@
+grade: 3
+- you added and committed your executable file "hello" -- anything automatically
+  created by a compiler or other tool should never be committed to a 
+  repository (because it can just be regenerated)

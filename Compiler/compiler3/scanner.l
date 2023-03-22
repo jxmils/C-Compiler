@@ -1,0 +1,148 @@
+/* Jason Miller CS370 Compiler3 */
+
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+// The ifndef below allows this scanner definition to be
+// used either with a yacc generated parser or all by
+// itself (if LEXONLY is defined)
+#ifndef LEXONLY
+// definitions are auto-created by yacc so just include them
+#include "y.tab.h"
+extern int debug; // declared and set in parser.y
+#else
+// we must have explicit definitions for standalone mode
+typedef union { int ival; char* str; } yystype;
+#define YYSTYPE yystype
+yystype yylval;
+#define LPAREN 1
+#define RPAREN 2
+#define LBRACE 3
+#define RBRACE 4
+#define SEMICOLON 5
+#define ID 6
+#define NUMBER 7
+#define PLUS 8
+#define COMMA 9
+#define EQUALS 10
+#define KWINT 11
+#define KWCHARS 12
+int debug=0;
+#endif
+%}
+
+/* This option is useful for printing out a syntax error
+*  message and printing out the line # it occurred on
+*/
+%option yylineno
+
+%%
+[ \t\n\r]+ { /* skipping white space */ }
+\(       {
+            if (debug) printf("lex LPAREN\n");
+            yylval.ival = yytext[0];
+            return(LPAREN);
+         }
+\)       {
+            if (debug) printf("lex RPAREN\n");
+            yylval.ival = yytext[0];
+            return(RPAREN);
+         }
+\{       {
+            if (debug) printf("lex LBRACE\n");
+            yylval.ival = yytext[0];
+            return(LBRACE);
+         }
+\}       {
+            if (debug) printf("lex RBRACE\n");
+            yylval.ival = yytext[0];
+            return(RBRACE);
+         }
+\;       {
+            if (debug) printf("lex SEMICOLON\n");
+            yylval.ival = yytext[0];
+            return(SEMICOLON);
+         }
+\+       {
+            if (debug) printf("lex PLUS\n");
+            yylval.ival = yytext[0];
+            return(PLUS);
+          }
+\,        {
+            if (debug) printf("lex COMMA\n");
+            yylval.ival = yytext[0];
+            return(COMMA);
+          }
+\=        {
+            if (debug) printf("lex COMMA\n");
+            yylval.ival = yytext[0];
+            return(EQUALS);
+          }
+(int)       {
+            if ( debug ) printf("INT\n");
+            char* pchar = strdup(yytext);
+            yylval.str = pchar;
+            free(pchar);
+            return(KWINT);
+          }
+char\*     {
+            if ( debug ) printf("CHAR*\n");
+            char* pchar = strdup(yytext);
+            yylval.str = pchar;
+            free(pchar);
+            return(KWCHARS);
+          }
+[0-9]+    {
+            if (debug) printf("lex NUMBER\n");
+            char *ptr;
+            yylval.ival = strtol( &yytext[0], &ptr, 10 );
+            return(NUMBER);
+          }
+[_a-zA-Z][_a-zA-Z0-9]*  {
+            if (debug) printf("lex ID: (%s)\n", yytext);
+            // creating a copy of the string is important, but
+            // in this small program we are leaking this memory,
+            // we don't clean it up; needs fixed in bigger program!
+            yylval.str = strdup(yytext);
+            return(ID);
+         }
+
+\"[^\"]*\" {
+            if (debug) printf("string: (%s)\n", yytext);
+            yylval.str = strdup(yytext);
+            return(STRING);
+           }
+
+
+%%
+/****** Functions (not used when used with parser) *******/
+
+//
+// Code in the ifdef block below is only for compiling the
+// scanner all by itself, for testing purposes. The
+// Makefile shows how to compile it under the "ltest" rule
+// (do "make ltest" to build it)
+//
+#ifdef LEXONLY
+
+// A main for standalone testing (uses just stdin as input)
+int main(int argc, char **argv)
+{
+   do {
+      yylex();
+   } while (1);
+   // while (!feof(stdin)); doesn't work if redirecting a file
+   // in because the file is read in and buffered, and eof is
+   // true too early, causing lex to stop; rather, use while(1)
+   // and then do a hard exit in yywrap(); ugly, but works!
+   return 0;
+}
+
+int yywrap()
+{
+   exit(0); // hard exit!
+   //return(1);
+}
+
+#endif // LEXONLY
